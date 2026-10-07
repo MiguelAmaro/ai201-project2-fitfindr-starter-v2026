@@ -24,8 +24,22 @@ import config  # noqa: F401 — you'll use this in search_listings
 from generate import generate
 from utils.data_loader import load_listings
 
-
 # ── Tool 1: search_listings ───────────────────────────────────────────────────
+
+_STOPWORDS = {"the", "a", "an", "and", "or", "but", "for", "under", "over", "of"}  # example set of stopwords to ignore in keyword matching   
+
+def _keywords(text: str) -> set[str]:
+    """
+    Extract keywords from a text string, ignoring stopwords.
+    """
+    words = re.findall(r"[a-z0-9]+", text.lower())
+    return {word for word in words if word not in _STOPWORDS and len(word) > 1}
+
+
+def _size_tokens(size: str) -> set[str]:
+    cleaned = re.sub(r"\([^\)]*\)", " ", size or "")
+    parts = [part.strip().upper() for part in cleaned.split("/")]
+    return {p for p in parts if p}
 
 def search_listings(
     description: str,

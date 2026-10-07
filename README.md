@@ -59,14 +59,14 @@
 
 ### `search_listings`
 
-- **What it does:**
-- **Inputs:** <!-- name and type each: `max_price` (float), not "a price" -->
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** searches the listings file for listing that best fit the description and criteria provided such as max price
+- **Inputs:** description(string), size (string),  and max_price (float)
+- **Returns:** list of listings json objects
+- **When it has nothing:** an empty list?
 
 ### `suggest_outfit`
 
-- **What it does:**
+- **What it does:** 
 - **Inputs:**
 - **Returns:**
 - **When it has nothing:**

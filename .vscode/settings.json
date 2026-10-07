@@ -1,0 +1,11 @@
+{
+  "python.analysis.indexing": true,
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.include": [
+    "."
+  ],
+  "python.analysis.exclude": [
+    "**/.venv",
+    "**/__pycache__"
+  ]
+} 
