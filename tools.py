@@ -20,6 +20,8 @@ That last line is what your loop branches on. "Returns a list" earns nothing —
 the description has to say what is *in* the list.
 """
 
+import re
+
 import config  # noqa: F401 — you'll use this in search_listings
 from generate import generate
 from utils.data_loader import load_listings
@@ -92,8 +94,38 @@ def search_listings(
     Test it from a terminal before you move on:
         python -c "from tools import search_listings; print(search_listings('graphic tee', max_price=30))"
     """
-    # TODO: replace this with your implementation
-    return []
+    query_keywords = _keywords(description)
+    matches = []
+
+    for listing in load_listings():
+        if max_price is not None and listing["price"] > max_price:
+            continue
+        if size is not None and not _size_tokens(size).intersection(
+            _size_tokens(listing.get("size", ""))
+        ):
+            continue
+
+        listing_text = " ".join(
+            str(value)
+            for field in (
+                "title",
+                "description",
+                "category",
+                "size",
+                "style_tags",
+                "condition",
+                "colors",
+                "brand",
+                "platform",
+            )
+            if (value := listing.get(field)) is not None
+        )
+        score = len(query_keywords.intersection(_keywords(listing_text)))
+        if score:
+            matches.append((score, listing))
+
+    matches.sort(key=lambda match: match[0], reverse=True)
+    return [listing for _, listing in matches[: config.SEARCH_RESULT_LIMIT]]
 
 
 # ── Tool 2: suggest_outfit ────────────────────────────────────────────────────
@@ -126,8 +158,34 @@ def suggest_outfit(new_item: dict, wardrobe: dict) -> str:
     Test it from a terminal before you move on:
         python -c "from tools import suggest_outfit; from utils.data_loader import get_example_wardrobe, load_listings; print(suggest_outfit(load_listings()[0], get_example_wardrobe()))"
     """
-    # TODO: replace this with your implementation
-    return ""
+    wardrobe_items = wardrobe.get("items", [])
+    item_details = (
+        f"{new_item.get('title', 'the item')}: {new_item.get('description', '')}; "
+        f"category: {new_item.get('category', '')}; sizes: {new_item.get('size', '')}; "
+        f"colors: {new_item.get('colors', [])}; style tags: {new_item.get('style_tags', [])}"
+    )
+
+    if wardrobe_items:
+        wardrobe_details = "\n".join(
+            f"- {item.get('name', 'Wardrobe item')} ({item.get('category', '')}); "
+            f"colors: {item.get('colors', [])}; style tags: {item.get('style_tags', [])}; "
+            f"notes: {item.get('notes') or 'none'}"
+            for item in wardrobe_items
+        )
+        prompt = (
+            f"Suggest one or two outfits featuring this new item: {item_details}\n\n"
+            f"Use specific pieces from the user's wardrobe, naming each piece. "
+            f"Wardrobe:\n{wardrobe_details}"
+        )
+    else:
+        prompt = (
+            f"Give general styling advice and one or two outfit ideas for this item: "
+            f"{item_details}. The user has an empty wardrobe, so suggest versatile "
+            "pieces they could pair with it without assuming they already own anything."
+        )
+
+    response = generate(prompt).strip()
+    return response or "Try pairing this item with versatile basics and accessories that complement its colors and style."
 
 
 # ── Tool 3: create_fit_card ───────────────────────────────────────────────────
@@ -166,5 +224,19 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
     Test it from a terminal before you move on:
         python -c "from tools import create_fit_card; from utils.data_loader import load_listings; print(create_fit_card('jeans and white sneakers', load_listings()[0]))"
     """
-    # TODO: replace this with your implementation
-    return ""
+    if not outfit or not outfit.strip():
+        return "Cannot create a fit card because no outfit suggestion was provided."
+
+    prompt = (
+        "Write a natural, social-media-style fit-card caption in 2-4 sentences. "
+        "Mention the item, its exact price, and its platform once each, and be "
+        "specific about the outfit's style or vibe. Do not invent listing details.\n\n"
+        f"Outfit: {outfit}\n"
+        f"Item: {new_item.get('title', 'Unknown item')}\n"
+        f"Description: {new_item.get('description', '')}\n"
+        f"Price: ${new_item.get('price', 'unknown')}\n"
+        f"Platform: {new_item.get('platform', 'unknown')}\n"
+        f"Category: {new_item.get('category', '')}\n"
+        f"Style tags: {new_item.get('style_tags', [])}"
+    )
+    return generate(prompt)
