@@ -107,10 +107,62 @@ def run_agent(query: str, wardrobe: dict) -> dict:
         than a stack trace. The import is already at the top of this file.
     """
     session = new_session(query, wardrobe)
+    price_match = re.search(
+        r"\b(?:under|below|less than|up to|at most|max(?:imum)?)(?:\s+of)?\s*\$?\s*(\d+(?:\.\d{1,2})?)",
+        query,
+        re.IGNORECASE,
+    )
+    size_match = re.search(
+        r"\bsize\s+([A-Za-z0-9]+(?:/[A-Za-z0-9]+)?(?:\.\d+)?)",
+        query,
+        re.IGNORECASE,
+    )
 
-    # TODO: delete these two lines and build the loop.
-    session["error"] = "The planning loop isn't built yet — see the TODO in agent.py."
-    return session
+    description = query
+    for match in sorted(
+        (match for match in (price_match, size_match) if match),
+        key=lambda match: match.start(),
+        reverse=True,
+    ):
+        description = description[: match.start()] + " " + description[match.end() :]
+    description = re.sub(
+        r"^\s*(?:(?:i(?:'m| am)?\s+)?(?:looking for|searching for)|find me|find|show me)\s+",
+        "",
+        description,
+        flags=re.IGNORECASE,
+    )
+    description = re.sub(r"\s+", " ", description).strip(" ,.-")
+    session["parsed"] = {
+        "description": description,
+        "size": size_match.group(1) if size_match else None,
+        "max_price": float(price_match.group(1)) if price_match else None,
+    }
+
+    iteration_count = 0
+    while True:
+        iteration_count += 1
+        trace.check_iterations(iteration_count)
+
+        session["search_results"] = search_listings(
+            session["parsed"]["description"],
+            session["parsed"]["size"],
+            session["parsed"]["max_price"],
+        )
+        if not session["search_results"]:
+            session["error"] = (
+                "No listings matched. Try changing the item description, "
+                "removing the size filter, or raising the price limit."
+            )
+            return session
+
+        session["selected_item"] = session["search_results"][0]
+        session["outfit_suggestion"] = suggest_outfit(
+            session["selected_item"], session["wardrobe"]
+        )
+        session["fit_card"] = create_fit_card(
+            session["outfit_suggestion"], session["selected_item"]
+        )
+        return session
 
 
 # ── running it directly ───────────────────────────────────────────────────────
