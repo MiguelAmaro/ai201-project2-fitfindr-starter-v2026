@@ -41,7 +41,7 @@
 
 <!-- Three or four sentences: what a user asks for, and what they get back. -->
 
-
+FitFindr takes a clothing search request and looks for matching thrift listings using the item's description, an optional size, and an optional price ceiling. If it finds something, it uses the first match and the user's wardrobe to suggest outfits, then creates a short fit-card caption. If nothing matches, it returns a message suggesting what the user could change instead of trying to style an item that was not found.
 
 ---
 
@@ -59,24 +59,24 @@
 
 ### `search_listings`
 
-- **What it does:** searches the listings file for listing that best fit the description and criteria provided such as max price
-- **Inputs:** description(string), size (string),  and max_price (float)
-- **Returns:** list of listings json objects
-- **When it has nothing:** an empty list?
+- **What it does:** Loads the listings and ranks items by keyword overlap with the description, after applying the optional size and inclusive maximum-price filters. Size matching uses size tokens, so `M` matches `S/M` without relying on substring matching.
+- **Inputs:** `description: str`; `size: str | None = None`; `max_price: float | None = None`.
+- **Returns:** A list of up to `config.SEARCH_RESULT_LIMIT` listing dictionaries, highest keyword-overlap score first. Each dictionary has `id`, `title`, `description`, `category`, `style_tags`, `size`, `condition`, `price`, `colors`, `brand`, and `platform`.
+- **When it has nothing:** Returns `[]` if no listing passes the filters and has at least one keyword in common with the description.
 
 ### `suggest_outfit`
 
-- **What it does:** 
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Calls `generate()` to suggest one or two outfits for a listing, using named pieces from the user's wardrobe when available.
+- **Inputs:** `new_item: dict` (a listing); `wardrobe: dict` (with an `items` list).
+- **Returns:** A non-empty `str` containing outfit suggestions or styling advice.
+- **When it has nothing:** An empty wardrobe gets general styling advice instead. If the model response is empty or whitespace, the tool returns fallback styling advice.
 
 ### `create_fit_card`
 
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Calls `generate()` to write a 2–4 sentence fit-card caption from the outfit and listing details, asking it to mention the item, exact price, platform, and style or vibe.
+- **Inputs:** `outfit: str`; `new_item: dict` (a listing).
+- **Returns:** The `str` returned by `generate()` for a non-empty outfit.
+- **When it has nothing:** If `outfit` is empty or whitespace, returns a descriptive message without calling the model.
 
 ---
 
@@ -93,13 +93,13 @@
      The grader checks your code against what you claim here, so the file and
      function have to be real. -->
 
-**Branch rule:**
+**Branch rule:** If `search_listings()` returns an empty list, `run_agent()` sets `session["error"]` with suggestions to change the description, remove the size filter, or raise the price limit, then returns. It does not call either model-backed tool. Otherwise, it selects the first result and continues through outfit suggestion and fit-card creation.
 
 **Where it lives:** `agent.py::run_agent`
 
-**How the query is parsed:** <!-- regex, string splitting, or asking the model — say which -->
+**How the query is parsed:** `run_agent()` uses regular expressions. It extracts a size after `size` and a numeric price after terms such as `under`, `below`, `up to`, or `max`; the price is stored as a float. It removes those matched constraints and a supported leading request phrase (such as `looking for`) from the remaining description.
 
-**What moves through the session:** <!-- which fields, in what order -->
+**What moves through the session:** `new_session()` first stores the original `query` and `wardrobe`, with empty or `None` result fields. `run_agent()` stores `description`, `size`, and `max_price` in `parsed`, then stores the complete search return in `search_results`. On a match it stores the first listing as `selected_item`, passes that item and `wardrobe` to `suggest_outfit()`, and stores the result in `outfit_suggestion`. It passes that string and the same selected listing to `create_fit_card()` and stores the result in `fit_card`. On no match, later fields remain `None`; the loop also checks its iteration count with `trace.check_iterations()`.
 
 ---
 
@@ -113,8 +113,9 @@
 **One full query**
 
 ```
-$ python app.py ask '...'
+$ python app.py ask 'vintage graphic tee under $30'
 
+[Paste the real terminal output here after running the command.]
 ```
 
 **The three tools, tested one at a time**
@@ -122,16 +123,19 @@ $ python app.py ask '...'
 ```
 $ python -c "from tools import search_listings; print(search_listings('graphic tee', max_price=30))"
 
+[Paste the real terminal output here after running the command.]
 ```
 
 ```
-$ python -c "from tools import suggest_outfit; ..."
+$ python -c "from tools import suggest_outfit; from utils.data_loader import get_example_wardrobe, load_listings; print(suggest_outfit(load_listings()[0], get_example_wardrobe()))"
 
+[Paste the real terminal output here after running the command.]
 ```
 
 ```
-$ python -c "from tools import create_fit_card; ..."
+$ python -c "from tools import create_fit_card; from utils.data_loader import load_listings; print(create_fit_card('jeans and white sneakers', load_listings()[0]))"
 
+[Paste the real terminal output here after running the command.]
 ```
 
 ---
@@ -147,15 +151,17 @@ $ python -c "from tools import create_fit_card; ..."
 
 **Moment 1**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- *What I asked for:* I asked GitHub Copilot to implement the three `tools.py` functions from the provided starter specifications.
+- *What came back:* Copilot helped generate listing search, wardrobe-aware outfit suggestions, and fit-card generation, including the specified empty-result and empty-input behavior.
+- *What I changed:* The Copilot-generated implementation was refined to include listing size in search keyword matching and to return fallback styling advice for an empty model response. I did not hand-write the generated implementations.
+- *Verification:* I ran the three standalone tool commands and checked their real outputs separately from code generation.
 
 **Moment 2**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- *What I asked for:* I asked GitHub Copilot to implement the Milestone 5 `run_agent()` planning loop from its starter TODO.
+- *What came back:* Copilot helped generate regex-based query parsing, session updates, the empty-search early return, and the successful search-to-outfit-to-fit-card path.
+- *What I changed:* I kept the implementation limited to the Milestone 5 requirements; it does not add Unit 4 trace-step instrumentation or `ModelUnavailable` handling.
+- *Verification:* Separately, I ran `python agent.py` and mocked checks for successful tool order and the empty-search path, including `fit_card` remaining `None`.
 
 <!-- ═══════════════════════ UNIT 4 — THE TEST ═══════════════════════
 
