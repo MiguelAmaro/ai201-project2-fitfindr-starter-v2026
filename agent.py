@@ -14,8 +14,11 @@ Build and test your three tools in `tools.py` first. Then come here.
 """
 
 import re
+
+import mcp
 import config
 import trace
+import mcp_client
 from tools import search_listings, suggest_outfit, create_fit_card
 from generate import ModelUnavailable
 
@@ -106,6 +109,9 @@ def run_agent(query: str, wardrobe: dict) -> dict:
       • A handler for ModelUnavailable, so a bad key produces a message rather
         than a stack trace. The import is already at the top of this file.
     """
+
+
+
     session = new_session(query, wardrobe)
     price_match = re.search(
         r"\b(?:under|below|less than|up to|at most|max(?:imum)?)(?:\s+of)?\s*\$?\s*(\d+(?:\.\d{1,2})?)",
@@ -142,12 +148,20 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     while True:
         iteration_count += 1
         trace.check_iterations(iteration_count)
-
+        
+        """
         session["search_results"] = search_listings(
-            session["parsed"]["description"],
-            session["parsed"]["size"],
-            session["parsed"]["max_price"],
-        )
+                    session["parsed"]["description"],
+                    session["parsed"]["size"],
+                    session["parsed"]["max_price"],
+                )
+        """
+        session["search_results"] = mcp_client.call_tool("search_listings", {
+            "description": session["parsed"]["description"],
+            "size": session["parsed"]["size"],
+            "max_price": session["parsed"]["max_price"],
+        })
+        
         if not session["search_results"]:
             session["error"] = (
                 "No listings matched. Try changing the item description, "
@@ -198,3 +212,7 @@ if __name__ == "__main__":
         "\nThe second one should stop before the fit card. If both paths look "
         "the same,\nthe branch isn't doing anything yet."
     )
+
+
+
+
