@@ -245,13 +245,49 @@ that produced it:
 **Happy path**
 
 ```
+python app.py ask "vintage graphic tee under $30"
 
+  Found:    Y2K Baby Tee — Butterfly Print — $18.0 on depop
+
+  Outfit:   Here are two distinct outfit ideas featuring the Y2K Baby Tee — Butterfly Print, styled entirely with pieces from your wardrobe:
+
+### Outfit 1: Classic Y2K Streetwear
+*Play up the early 2000s proportions by pairing the fitted, cropped baby tee with high-waisted, relaxed denim.*
+
+* **Top:** Y2K Baby Tee — Butterfly Print
+* **Bottoms:** Baggy straight-leg jeans (dark wash)
+* **Accessories:** Brown leather belt, Black crossbody bag
+* **Shoes:** Chunky white sneakers
+* **Why it works:** The fitted crop of the baby tee balances out the voluminous, baggy fit of the dark wash jeans. Add the brown leather belt to define the high waist, and finish with chunky white sneakers and the black crossbody bag for an effortless, authentic Y2K off-duty look.
+
+### Outfit 2: Edgy Contrast
+*Blend the sweet, nostalgic butterfly graphic with tough, grungy elements for a cool-girl contrast.*
+
+* **Top:** Y2K Baby Tee — Butterfly Print
+* **Outerwear:** Vintage black denim jacket
+* **Bottoms:** Wide-leg khaki trousers (tan)
+* **Shoes:** Black combat boots
+* **Why it works:** The earth-toned khaki trousers ground the pastel pinks and purples of the butterfly graphic. Layering the slightly cropped vintage black denim jacket on top adds texture, while the black combat boots tie the whole outfit together with a touch of grunge edge.
+
+  Fit card: Serving major early 2000s off-duty energy with this classic Y2K streetwear look! I styled the Y2K Baby Tee — Butterfly Print with baggy denim and chunky sneakers for the ultimate nostalgic vibe. Score this cute graphic top for just $18.0 over on depop before it's gone!
+
+2 model calls this session, 904 prompt + 378 output tokens
 ```
 
 **Empty search**
 
 ```
+python app.py ask "designer ballgown size XXS under $5"
 
+  No listings matched. Try changing the item description, removing the size filter, or raising the price limit.
+
+0 model calls this session
+
+
+python app.py ask "vintage graphic tee under $30"
+1 model calls this session
+
+ModelUnavailable: The model rejected your API key. Check GEMINI_API_KEY in your .env file, or create a fresh key at aistudio.google.com.
 ```
 
 **On the MCP move:** <!-- what changed in your code, and whether anything
