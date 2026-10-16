@@ -54,10 +54,10 @@ Given a query that matches no listings, the agent stops before calling
      compares session["selected_item"] against what actually reached
      suggest_outfit is the shape you're after. -->
 
-For 5 of 5 serches the dictionary passed in to the following tool with the dictionary produced by the search function must be equal in value.
+In 5 of 5 searches, the item passed to `suggest_outfit` is equal in value to `session["selected_item"]`, the dictionary `search_listings` produced.
 
 **Why this target:**
-It ensures that the listing id's are consistant across tool calls.
+It ensures that listing IDs are consistent across tool calls.
 
 
 ---
@@ -75,11 +75,10 @@ It ensures that the listing id's are consistant across tool calls.
      sentence? A card longer than a caption anyone would post? Any of those can
      be turned into a number. -->
 
-For at least 4 of 5 listings, the generated fit card mentions listing's exact price and at least one of its style_tags.
-
+For at least 4 of 5 listings, the generated fit card mentions the listing's exact price and at least one of its `style_tags`.
 
 **Why this target:**
-Direct references to the listings prove that the generated text is relevent to the listing.
+Direct references to the listing prove that the generated text is relevant to it.
 
 
 ---
@@ -93,7 +92,7 @@ Direct references to the listings prove that the generated text is relevent to t
      search respects a price ceiling — anything, as long as it names a number
      or an observable outcome. -->
 
-for 5 of 5 searches containing a maximum price, everylisting by search_listings has a m price less than or equal to the specified maximum.
+For 5 of 5 searches containing a maximum price, every listing returned by `search_listings` has a price less than or equal to that maximum.
 
 **Why this target:**
 Provides the user information despite the model not being reachable.
